@@ -20,9 +20,28 @@ Sistema de prevención de conflictos de puertos para contenedores Docker en `/op
 | `inventory.md` | Inventario generado automáticamente del estado actual (se actualiza en cada verificación) |
 | `README.md` | Esta documentación |
 
-## Uso
+## Instalación
 
-### Opción 1: Verificación manual antes de levantar un contenedor
+### Opción 1: Instalación automática (recomendado)
+
+El script puede configurar automáticamente tus aliases:
+
+```bash
+# Instalar aliases en ~/.bashrc, ~/.zshrc, o ~/.bash_profile
+/opt/docker-inventory/check-ports.sh --install
+
+# O usar el alias corto
+/opt/docker-inventory/check-ports.sh -i
+```
+
+Luego recarga tu shell:
+```bash
+source ~/.zshrc  # o source ~/.bashrc
+```
+
+### Opción 2: Manual
+
+Agregar al `~/.bashrc` o `~/.zshrc`:
 
 ```bash
 cd /opt/orderflow

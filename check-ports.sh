@@ -92,46 +92,110 @@ generate_inventory() {
     echo "" >> "$INVENTORY_FILE"
 
     echo "## Puertos en uso (sistema):" >> "$INVENTORY_FILE"
-    # Mostrar solo puertos relevantes (3000+, 5400+, 6000+, 8000+, 9000+)
+    # Mostrar solo puertos relevantes (3000-9999)
     get_used_ports | awk '$1 >= 3000 && $1 <= 9999' | tr '\n' ' ' >> "$INVENTORY_FILE"
     echo "" >> "$INVENTORY_FILE"
 
     echo "" >> "$INVENTORY_FILE"
-    echo "## Proyectos en /opt:" >> "$INVENTORY_FILE"
-    for d in /opt/*/; do
-        if [ -f "$d/docker-compose.yml" ]; then
-            local name=$(basename "$d")
-            local ports=$(grep -E '^\s*-[[:space:]]*"[0-9]+:[0-9]+"' "$d/docker-compose.yml" 2>/dev/null | \
-                awk -F'"' '{print $2}' | \
-                awk -F':' '{print $1}' | \
-                tr '\n' ',' | sed 's/,$//')
-            echo "- $name: ${ports:-sin puertos}" >> "$INVENTORY_FILE"
+    echo "## Proyectos Docker detectados:" >> "$INVENTORY_FILE"
+    # Buscar en directorios comunes
+    local search_dirs=("$HOME" "/opt" "/srv" "$HOME/projects" "$HOME/dev")
+    for search_dir in "${search_dirs[@]}"; do
+        if [ -d "$search_dir" ]; then
+            for d in "$search_dir"/*/; do
+                if [ -f "$d/docker-compose.yml" ] || [ -f "$d/docker-compose.yaml" ]; then
+                    local name=$(basename "$d")
+                    local ports=$(grep -E '^\s*-[[:space:]]*"[0-9]+:[0-9]+"' "$d/docker-compose."* 2>/dev/null | \
+                        awk -F'"' '{print $2}' | \
+                        awk -F':' '{print $1}' | \
+                        tr '\n' ',' | sed 's/,$//')
+                    echo "- $name ($d): ${ports:-sin puertos}" >> "$INVENTORY_FILE"
+                fi
+            done
         fi
     done
 
     echo -e "${GREEN}✓ Inventario actualizado: $INVENTORY_FILE${NC}"
 }
 
+# Función para instalar aliases automáticamente
+install_aliases() {
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local check_script="$script_dir/check-ports.sh"
+    local alias_block='
+# Docker Port Conflict Checker (docker-inventory)
+# Auto-instalado el '"$(date '+%Y-%m-%d')"'
+alias dcup='"'"'"$check_script" . && docker compose up -d'"'"'
+alias dcup-force='"'"'docker compose up -d'"'"'
+dccheck() {
+    "'"$check_script"' "${1:-.}"
+}
+'
+
+    local shell_configs=()
+    
+    # Detectar shell configs existentes
+    [ -f ~/.bashrc ] && shell_configs+=("$HOME/.bashrc")
+    [ -f ~/.zshrc ] && shell_configs+=("$HOME/.zshrc")
+    [ -f ~/.bash_profile ] && shell_configs+=("$HOME/.bash_profile")
+    
+    if [ ${#shell_configs[@]} -eq 0 ]; then
+        echo -e "${YELLOW}No se encontró ~/.bashrc, ~/.zshrc o ~/.bash_profile${NC}"
+        echo "Agrega manualmente los aliases a tu shell config."
+        return 1
+    fi
+    
+    local installed=0
+    
+    for config in "${shell_configs[@]}"; do
+        if grep -q "docker-inventory" "$config" 2>/dev/null; then
+            echo -e "${GREEN}✓ $config ya tiene los aliases configurados${NC}"
+        else
+            echo "$alias_block" >> "$config"
+            echo -e "${GREEN}✓ Aliases agregados a $config${NC}"
+            installed=1
+        fi
+    done
+    
+    if [ $installed -eq 1 ]; then
+        echo ""
+        echo -e "${YELLOW}Para activar los aliases, ejecuta:${NC}"
+        echo "  source ~/.bashrc  # o source ~/.zshrc"
+    fi
+    
+    return 0
+}
+
 # Main
 main() {
+    # Modo instalación
+    if [[ "$1" == "--install" || "$1" == "-i" ]]; then
+        echo "================================"
+        echo "  Docker Inventory Installer"
+        echo "================================"
+        echo ""
+        install_aliases
+        exit $?
+    fi
+
     local target_dir="${1:-.}"
     local compose_file="$target_dir/docker-compose.yml"
-    
+
     echo "================================"
     echo "  Docker Port Conflict Checker"
     echo "================================"
     echo ""
-    
+
     # Generar inventario primero
     generate_inventory
-    
+
     echo ""
-    
+
     if [ ! -f "$compose_file" ]; then
         echo -e "${RED}Error: No se encontró docker-compose.yml en $target_dir${NC}"
         exit 1
     fi
-    
+
     # Verificar conflictos
     if check_conflicts "$compose_file"; then
         echo ""
