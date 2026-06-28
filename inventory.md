@@ -1,4 +1,4 @@
-# Inventario de Puertos Docker - 2026-06-28 13:10
+# Inventario de Puertos Docker - 2026-06-28 13:14
 
 ## Contenedores corriendo:
 orderflow_db             0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp

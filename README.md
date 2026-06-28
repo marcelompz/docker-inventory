@@ -24,10 +24,10 @@ Sistema de prevención de conflictos de puertos para contenedores Docker en `/op
 
 ### Opción 1: Instalación automática (recomendado)
 
-El script puede configurar automáticamente tus aliases:
+El script detecta y configura automáticamente tus archivos de shell (`~/.bashrc`, `~/.zshrc`, `~/.bash_profile`):
 
 ```bash
-# Instalar aliases en ~/.bashrc, ~/.zshrc, o ~/.bash_profile
+# Instalar aliases
 /opt/docker-inventory/check-ports.sh --install
 
 # O usar el alias corto
@@ -36,8 +36,15 @@ El script puede configurar automáticamente tus aliases:
 
 Luego recarga tu shell:
 ```bash
-source ~/.zshrc  # o source ~/.bashrc
+source ~/.bashrc  # o source ~/.zshrc
 ```
+
+**¿Qué hace la instalación?**
+
+Agrega los siguientes aliases a tu shell config:
+- `dcup` - Verifica puertos y levanta contenedores
+- `dcup-force` - Levanta sin verificar
+- `dccheck [dir]` - Solo verifica puertos
 
 ### Opción 2: Manual
 
