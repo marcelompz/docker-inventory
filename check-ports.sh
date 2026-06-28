@@ -122,16 +122,8 @@ generate_inventory() {
 install_aliases() {
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local check_script="$script_dir/check-ports.sh"
-    local alias_block='
-# Docker Port Conflict Checker (docker-inventory)
-# Auto-instalado el '"$(date '+%Y-%m-%d')"'
-alias dcup='"'"'"$check_script" . && docker compose up -d'"'"'
-alias dcup-force='"'"'docker compose up -d'"'"'
-dccheck() {
-    "'"$check_script"' "${1:-.}"
-}
-'
-
+    local install_date="$(date '+%Y-%m-%d')"
+    
     local shell_configs=()
     
     # Detectar shell configs existentes
@@ -151,7 +143,16 @@ dccheck() {
         if grep -q "docker-inventory" "$config" 2>/dev/null; then
             echo -e "${GREEN}✓ $config ya tiene los aliases configurados${NC}"
         else
-            echo "$alias_block" >> "$config"
+            cat >> "$config" << EOF
+
+# Docker Port Conflict Checker (docker-inventory)
+# Auto-instalado el $install_date
+alias dcup='$check_script . && docker compose up -d'
+alias dcup-force='docker compose up -d'
+dccheck() {
+    $check_script "\${1:-.}"
+}
+EOF
             echo -e "${GREEN}✓ Aliases agregados a $config${NC}"
             installed=1
         fi
