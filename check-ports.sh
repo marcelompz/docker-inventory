@@ -1,7 +1,13 @@
 #!/bin/bash
 #
-# check-ports.sh - Verifica conflictos de puertos antes de levantar contenedores Docker
-# Uso: ./check-ports.sh [directorio-con-docker-compose]
+# Docker Port Conflict Checker
+# Verifica conflictos de puertos antes de levantar contenedores Docker
+#
+# Copyright (C) 2026 marcelompz
+# License: GNU General Public License v3.0 (GPL-3.0)
+# See LICENSE file or https://www.gnu.org/licenses/gpl-3.0.html
+#
+# Usage: ./check-ports.sh [directorio-con-docker-compose]
 #
 
 set -e

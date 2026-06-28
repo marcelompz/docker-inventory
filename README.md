@@ -1,5 +1,11 @@
 # Docker Inventory & Port Conflict Checker
 
+Sistema de prevención de conflictos de puertos para contenedores Docker.
+
+**Licencia:** [GPL-3.0](LICENSE)  
+**Autor:** marcelompz  
+**Repositorio:** https://github.com/marcelompz/docker-inventory
+
 ## Descripción
 
 Sistema de prevención de conflictos de puertos para contenedores Docker en `/opt`.
