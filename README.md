@@ -1,4 +1,4 @@
-# Docker Inventory & Port Conflict Checker
+# Docker Port Conflict Checker
 
 Sistema de prevención de conflictos de puertos para contenedores Docker.
 
@@ -8,9 +8,11 @@ Sistema de prevención de conflictos de puertos para contenedores Docker.
 
 ## Descripción
 
-Sistema de prevención de conflictos de puertos para contenedores Docker en `/opt`.
+Verifica los puertos disponibles **antes** de ejecutar `docker compose up -d` para evitar el error:
 
-**Problema que resuelve:** Evita el error `Bind for 0.0.0.0:XXXX failed: port is already allocated` verificando los puertos disponibles **antes** de ejecutar `docker compose up -d`.
+```
+Bind for 0.0.0.0:XXXX failed: port is already allocated
+```
 
 ## Archivos
 
@@ -28,10 +30,10 @@ El script detecta y configura automáticamente tus archivos de shell (`~/.bashrc
 
 ```bash
 # Instalar aliases
-/opt/docker-inventory/check-ports.sh --install
+./check-ports.sh --install
 
 # O usar el alias corto
-/opt/docker-inventory/check-ports.sh -i
+./check-ports.sh -i
 ```
 
 Luego recarga tu shell:
@@ -51,8 +53,21 @@ Agrega los siguientes aliases a tu shell config:
 Agregar al `~/.bashrc` o `~/.zshrc`:
 
 ```bash
-cd /opt/orderflow
-/opt/docker-inventory/check-ports.sh .
+# Docker Port Conflict Checker
+alias dcup='/path/to/check-ports.sh . && docker compose up -d'
+alias dcup-force='docker compose up -d'
+dccheck() {
+    /path/to/check-ports.sh "${1:-.}"
+}
+```
+
+## Uso
+
+### Verificación manual antes de levantar un contenedor
+
+```bash
+cd mi-proyecto
+/path/to/check-ports.sh .
 ```
 
 Si no hay conflictos:
@@ -66,48 +81,28 @@ Si hay conflictos:
 ✗ Puerto 5432 ya está en uso por otro servicio
 ```
 
-### Opción 2: Usar los aliases de zsh (recomendado)
-
-Los siguientes aliases se agregaron automáticamente a `~/.zshrc`:
-
-| Alias | Descripción |
-|-------|-------------|
-| `dcup` | Verifica puertos y levanta contenedores (`check-ports.sh && docker compose up -d`) |
-| `dcup-force` | Levanta contenedores sin verificar (uso bajo tu riesgo) |
-| `dccheck [dir]` | Solo verifica puertos sin levantar contenedores |
-
-**Ejemplos:**
+### Usando los aliases (después de instalar)
 
 ```bash
-# Verificar y levantar OrderFlow
-cd /opt/orderflow
+# Verificar y levantar
+cd mi-proyecto
 dcup
 
-# Solo verificar un proyecto
-dccheck /opt/vitalog
+# Solo verificar
+dccheck /ruta/a/proyecto
 
 # Levantar sin verificar (si estás seguro)
 dcup-force
 ```
 
-### Recargar zsh después de instalar
+## Características
 
-```bash
-source ~/.zshrc
-```
-
-## Puertos asignados (actualizado 2026-06-28)
-
-| Proyecto | Servicio | Puerto Externo | Puerto Interno |
-|----------|----------|----------------|----------------|
-| **Axon** | web-dev | 5173 | 5173 |
-| | redis | 6379 | 6379 |
-| | couchdb | 5984 | 5984 |
-| | postgres | 5432 | 5432 |
-| **OrderFlow** | db | 5433 | 5432 |
-| | backend | 3010 | 3010 |
-| | frontend | 3011 | 3011 |
-| | odoo_adapter | 3005 | 3005 |
+- ✅ Detecta puertos en uso por otros contenedores o servicios
+- ✅ Ignora puertos ya usados por el mismo proyecto (contenedores existentes)
+- ✅ Genera inventario automático de proyectos Docker en directorios comunes
+- ✅ Muestra puertos del sistema (3000-9999)
+- ✅ Funciona con proyectos que tienen múltiples servicios
+- ✅ Búsqueda multi-directorio: `$HOME`, `/srv`, `~/projects`, `~/dev`, etc.
 
 ## ¿Por qué ocurren conflictos?
 
@@ -115,7 +110,7 @@ Docker asigna puertos en el momento de levantar el contenedor. Si otro proceso (
 
 ```
 Error response from daemon: failed to set up container networking: 
-driver failed programming external connectivity on endpoint orderflow_db: 
+driver failed programming external connectivity on endpoint: 
 Bind for 0.0.0.0:5432 failed: port is already allocated
 ```
 
@@ -125,22 +120,21 @@ Bind for 0.0.0.0:5432 failed: port is already allocated
 2. Detener los contenedores en conflicto
 3. Usar `docker compose down` y volver a levantar
 
-## Características
+## Ejemplo de inventario
 
-- ✅ Detecta puertos en uso por otros contenedores
-- ✅ Ignora puertos ya usados por el mismo proyecto (contenedores existentes)
-- ✅ Genera inventario automático de todos los proyectos en `/opt`
-- ✅ Muestra puertos del sistema (3000-9999)
-- ✅ Funciona con proyectos que tienen múltiples servicios
+```markdown
+# Inventario de Puertos Docker - 2026-06-28
 
-## Generar inventario manual
+## Contenedores corriendo:
+mi_proyecto_db       0.0.0.0:5432->5432/tcp
+mi_proyecto_api      0.0.0.0:8080->8080/tcp
 
-```bash
-# El inventario se genera automáticamente al verificar
-/opt/docker-inventory/check-ports.sh /opt/orderflow
+## Puertos en uso (sistema):
+3000 5432 6379 8080 9000
 
-# O usar el script original del usuario
-bash ~/inventory.sh
+## Proyectos Docker detectados:
+- mi-proyecto ($HOME/docker/mi-proyecto/): 5432,8080
+- otro-proyecto ($HOME/dev/otro-proyecto/): 3000,9000
 ```
 
 ## Solución de problemas
@@ -164,3 +158,17 @@ Usa el alias `dcup-force` o ejecuta directamente:
 ```bash
 docker compose up -d
 ```
+
+### Los aliases no funcionan después de instalar
+
+Recarga tu shell:
+```bash
+source ~/.bashrc   # para bash
+source ~/.zshrc    # para zsh
+```
+
+O reinicia la terminal.
+
+## Licencia
+
+GNU General Public License v3.0 (GPL-3.0). Ver [LICENSE](LICENSE) para más detalles.

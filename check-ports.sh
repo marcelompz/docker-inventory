@@ -99,7 +99,7 @@ generate_inventory() {
     echo "" >> "$INVENTORY_FILE"
     echo "## Proyectos Docker detectados:" >> "$INVENTORY_FILE"
     # Buscar en directorios comunes
-    local search_dirs=("$HOME" "/opt" "/srv" "$HOME/projects" "$HOME/dev")
+    local search_dirs=("$HOME" "/srv" "$HOME/projects" "$HOME/dev" "$HOME/docker" "$HOME/containers")
     for search_dir in "${search_dirs[@]}"; do
         if [ -d "$search_dir" ]; then
             for d in "$search_dir"/*/; do
